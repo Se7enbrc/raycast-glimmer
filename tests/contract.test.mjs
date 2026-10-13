@@ -7,6 +7,7 @@ import {
   parseApps,
   parsePCs,
   parseStatus,
+  parseStop,
   pcState,
   streamDetails,
 } from "../src/lib/contract.ts";
@@ -49,7 +50,7 @@ test("reads all apps, including hidden and running apps", () => {
 });
 
 test("rejects invalid JSON, missing versions, and unsupported versions", () => {
-  for (const parse of [parsePCs, parseApps, parseStatus]) {
+  for (const parse of [parsePCs, parseApps, parseStatus, (text) => parseStop(text, 0)]) {
     for (const text of ["", "[]", "null", "{", "{}", '{"version":2}', '{"version":"1"}']) {
       assert.throws(() => parse(text), ContractError);
     }
@@ -124,15 +125,17 @@ test("builds URLs with percent-encoded spaces, literal pluses, Unicode, and quer
 });
 
 test("builds resume, wake, and confirmed quit URLs with no extra parameters", () => {
-  for (const action of ["stream", "wake", "quit"]) {
+  for (const action of ["stream", "stop", "wake", "quit"]) {
     assert.equal(buildURL(action, pc.id), `glimmer://${action}?pc=pc-uuid`);
   }
   assert.throws(() => buildURL("quit", pc.id, "Steam"));
   assert.throws(() => buildURL("pair", pc.id));
-  assert.throws(() => buildURL("stop", pc.id));
+  assert.equal(buildURL("stop"), "glimmer://stop");
+  for (const action of ["stream", "wake", "quit"]) assert.throws(() => buildURL(action));
   for (const name of ["", "  ", "a\nb", "a\u007fb", "a\u200bb", "a\u202eb", "\ud800"]) {
     assert.throws(() => buildURL("stream", name));
     assert.throws(() => buildURL("stream", pc.id, name));
+    assert.throws(() => buildURL("stop", name));
   }
 });
 

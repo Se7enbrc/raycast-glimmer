@@ -2,8 +2,8 @@ import { execFile } from "node:child_process";
 import { constants } from "node:fs";
 import { access } from "node:fs/promises";
 import { promisify } from "node:util";
-import { exitCodeMessage, parseApps, parsePCs, parseStatus } from "./contract";
-import type { App, PC } from "./contract";
+import { exitCodeMessage, parseApps, parsePCs, parseStatus, parseStop } from "./contract";
+import type { App, PC, StopResult } from "./contract";
 
 const execute = promisify(execFile);
 const executablePaths = [
@@ -28,14 +28,23 @@ export async function findCLI(): Promise<string> {
     try {
       await access(path, constants.X_OK);
       return path;
-    } catch {
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code;
+      if (code !== "ENOENT" && code !== "ENOTDIR") {
+        throw new Error("Glimmer’s command could not be accessed. Check its installation and permissions.");
+      }
       // Try the next documented installation location.
     }
   }
   throw new MissingCLIError();
 }
 
-async function run(args: string[], pc?: string, timeout = 120_000): Promise<string> {
+async function run(
+  args: string[],
+  pc?: string,
+  timeout = 120_000,
+  acceptedExitCodes: number[] = [],
+): Promise<{ stdout: string; exitCode: number }> {
   const executable = await findCLI();
   try {
     const { stdout } = await execute(executable, args, {
@@ -45,22 +54,25 @@ async function run(args: string[], pc?: string, timeout = 120_000): Promise<stri
       // Argument arrays keep PC names and app names out of a shell.
       shell: false,
     });
-    return stdout;
+    return { stdout, exitCode: 0 };
   } catch (error) {
-    const failure = error as { code?: number | string; killed?: boolean };
+    const failure = error as { code?: number | string; killed?: boolean; stdout?: string };
     if (failure.code === "ENOENT") throw new MissingCLIError();
     if (failure.killed) throw new Error("Glimmer took too long to answer. Open Glimmer and try again.");
+    if (typeof failure.code === "number" && acceptedExitCodes.includes(failure.code)) {
+      return { stdout: failure.stdout ?? "", exitCode: failure.code };
+    }
     // Do not expose arbitrary stderr, which can include protocol details.
     throw new Error(exitCodeMessage(typeof failure.code === "number" ? failure.code : null, pc));
   }
 }
 
 export async function listPCs(): Promise<PC[]> {
-  return parsePCs(await run(["list", "--json"])).filter((pc) => pc.paired);
+  return parsePCs((await run(["list", "--json"])).stdout).filter((pc) => pc.paired);
 }
 
 export async function readStatus() {
-  return parseStatus(await run(["status", "--json"], undefined, 15_000));
+  return parseStatus((await run(["status", "--json"], undefined, 15_000)).stdout);
 }
 
 export interface PCLibrary {
@@ -75,7 +87,7 @@ export async function loadLibrary(): Promise<PCLibrary[]> {
   return Promise.all(
     pcs.map(async (pc): Promise<PCLibrary> => {
       try {
-        return { pc, apps: parseApps(await run(["list", pc.id, "--json"], pc.name)) };
+        return { pc, apps: parseApps((await run(["list", pc.id, "--json"], pc.name)).stdout) };
       } catch (error) {
         if (error instanceof MissingCLIError) throw error;
         return { pc, apps: [], error: errorMessage(error) };
@@ -89,11 +101,10 @@ export async function wakePC(pc: PC): Promise<void> {
   await run(["wake", pc.id, "--wait"], pc.name);
 }
 
-export async function stopLiveStream(): Promise<false> {
-  // This Glimmer contract has no disconnect command; quit would close the PC app.
-  const status = await readStatus();
-  if (!status.live) return false;
-  throw new Error("Glimmer cannot disconnect and leave the PC app running. Open Glimmer to manage the stream.");
+export async function stopLiveStream(): Promise<StopResult> {
+  // The CLI waits up to 15 seconds for a reply; allow startup and teardown time.
+  const { stdout, exitCode } = await run(["stop", "--json"], undefined, 20_000, [5]);
+  return parseStop(stdout, exitCode);
 }
 
 export function errorMessage(error: unknown): string {

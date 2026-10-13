@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { buildURL, ContractError, parseApps, parsePCs, parseStatus } from "../src/lib/contract.ts";
+import { buildURL, ContractError, parseApps, parsePCs, parseStatus, parseStop } from "../src/lib/contract.ts";
 
 const fixture = JSON.parse(readFileSync(new URL("./fixtures/glimmer/contract-v1.json", import.meta.url), "utf8"));
 const json = JSON.stringify;
@@ -14,6 +14,8 @@ const documents = [
   ["pcsEmpty", parsePCs, []],
   ["apps", parseApps, fixture.apps.apps],
   ["appsEmpty", parseApps, []],
+  ["stopStopped", (text) => parseStop(text, 0), withoutVersion(fixture.stopStopped)],
+  ["stopIdle", (text) => parseStop(text, 5), withoutVersion(fixture.stopIdle)],
   ...["statusIdle", "statusLive", "statusUnknown", "statusReconnecting"].map((name) => [
     name,
     parseStatus,
@@ -49,6 +51,8 @@ for (const [name, parse, expected] of documents) {
 }
 
 const records = [
+  ["stop result", withoutVersion(fixture.stopStopped), (row) => parseStop(json({ version: 1, ...row }), 0), []],
+  ["idle stop result", withoutVersion(fixture.stopIdle), (row) => parseStop(json({ version: 1, ...row }), 5), []],
   ["PC", fixture.pcs.pcs[4], (row) => parsePCs(json({ version: 1, pcs: [row] }))[0], ["address", "runningApp"]],
   ["app", fixture.apps.apps[0], (row) => parseApps(json({ version: 1, apps: [row] }))[0], []],
   [
@@ -103,10 +107,10 @@ test("builds exactly the links accepted and decoded by Glimmer's Swift parser", 
 });
 
 test("rejects unsupported actions and parameters at runtime", () => {
-  for (const action of ["stop", "pair", "status", "list", "help", "unknown", "STREAM", "", null, undefined]) {
+  for (const action of ["pair", "status", "list", "help", "unknown", "STREAM", "", null, undefined]) {
     assert.throws(() => buildURL(action, "Den PC"), /action isn’t supported/);
   }
-  for (const action of ["wake", "quit"]) {
+  for (const action of ["stop", "wake", "quit"]) {
     assert.throws(() => buildURL(action, "Den PC", "Hades II"), /action isn’t supported/);
   }
   for (const url of fixture.rejectedURLs) {

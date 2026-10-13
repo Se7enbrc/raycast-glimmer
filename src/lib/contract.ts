@@ -161,6 +161,19 @@ export function parseStatus(text: string): StreamStatus {
   };
 }
 
+export type StopResult = { result: "stopped"; stopped: true } | { result: "noActiveStream"; stopped: false };
+
+export function parseStop(text: string, exitCode: number): StopResult {
+  const value = envelope(text);
+  if (exitCode === 0 && value.result === "stopped" && value.stopped === true) {
+    return { result: "stopped", stopped: true };
+  }
+  if (exitCode === 5 && value.result === "noActiveStream" && value.stopped === false) {
+    return { result: "noActiveStream", stopped: false };
+  }
+  return invalid();
+}
+
 export function exitCodeMessage(code: number | null, pc = "The PC"): string {
   switch (code) {
     case 0:
@@ -178,7 +191,7 @@ export function exitCodeMessage(code: number | null, pc = "The PC"): string {
   }
 }
 
-export type URLAction = "stream" | "wake" | "quit";
+export type URLAction = "stream" | "stop" | "wake" | "quit";
 
 function queryValue(value: string): string {
   if (typeof value !== "string" || !value.trim() || hasControlCharacters(value)) {
@@ -192,10 +205,12 @@ function queryValue(value: string): string {
   }
 }
 
-export function buildURL(action: URLAction, pc: string, app?: string): string {
-  if (!["stream", "wake", "quit"].includes(action) || (action !== "stream" && app !== undefined)) {
+export function buildURL(action: URLAction, pc?: string, app?: string): string {
+  if (!["stream", "stop", "wake", "quit"].includes(action) || (action !== "stream" && app !== undefined)) {
     throw new Error("This Glimmer link action isn’t supported.");
   }
+  if (action === "stop" && pc === undefined) return "glimmer://stop";
+  if (pc === undefined) throw new Error("The Glimmer link needs a valid PC or app name.");
   return `glimmer://${action}?pc=${queryValue(pc)}${app === undefined ? "" : `&app=${queryValue(app)}`}`;
 }
 

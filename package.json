@@ -30,7 +30,7 @@
     {
       "name": "stop-streaming",
       "title": "Stop Streaming",
-      "description": "Check whether Glimmer can disconnect without closing the PC app",
+      "description": "Stop this Mac’s Glimmer stream and quit the game on the PC, after confirmation",
       "mode": "no-view"
     },
     {

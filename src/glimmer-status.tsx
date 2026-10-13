@@ -1,7 +1,8 @@
 import { Icon, launchCommand, LaunchType, MenuBarExtra, showHUD } from "@raycast/api";
 import { useCachedPromise } from "@raycast/utils";
 import { streamDetails } from "./lib/contract";
-import { errorMessage, MissingCLIError, readStatus, stopLiveStream } from "./lib/glimmer";
+import { errorMessage, MissingCLIError, readStatus } from "./lib/glimmer";
+import StopStreaming from "./stop-streaming";
 import { ignoreErrorToast, openGlimmer } from "./components/shared";
 
 export default function GlimmerStatus() {
@@ -14,8 +15,7 @@ export default function GlimmerStatus() {
 
   async function stop() {
     try {
-      await stopLiveStream();
-      await showHUD("Nothing is streaming.");
+      await StopStreaming();
       // Mutations await revalidation in menu bar commands before the command finishes.
       await mutate();
     } catch (error) {
