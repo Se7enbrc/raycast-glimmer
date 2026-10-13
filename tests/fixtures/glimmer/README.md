@@ -20,12 +20,12 @@ The generator compiles the encoder and parser directly from the supplied
 checkout in a temporary directory. Source changes should be reviewed before
 running it. CI uses the committed fixture and needs no sibling checkout.
 
-The implementation on `feat/2026.10.8` and the `docs/humanize` automation and
-command-line docs agree on the following contract:
+The fixtures were regenerated from `feat/2026.10.8` at
+`d63aac8da9599085900d7defc9567816b65c8a40`. That checkout defines this contract:
 
-- URLs accept only `stream`, `wake`, and `quit`. `pc` is required; `app` is
-  optional only for `stream`. Values are decoded once, `%20` is space and `+`
-  is literal. Names, IDs and saved addresses identify PCs. Unknown actions,
+- URLs accept only `stream`, `stop`, `wake`, and `quit`. `pc` is optional for
+  `stop` and required otherwise; `app` is optional only for `stream`. Values are decoded once, `%20` is space and `+`
+  is literal. Names, IDs and saved addresses identify PCs case-insensitively. Unknown actions,
   duplicate/unknown parameters and control characters are rejected. Quit URLs
   require confirmation; Shortcuts' quit intent has different semantics.
 - `list --json` returns `version` and `pcs`; `list <pc> --json` returns `version`
@@ -40,5 +40,14 @@ command-line docs agree on the following contract:
 - JSON names can contain controls (Glimmer tests an app name containing a
   newline), while URLs cannot. Such apps remain visible, with an Open Glimmer
   action instead of an invalid stream link.
-- There is no stop URL, stop CLI verb or disconnect operation in this checkout.
-  Never substitute `quit` for a disconnect: it closes the PC app.
+- `stop [<pc>] [--json]` does not open Glimmer. It stops this Mac’s stream and
+  quits the game on the PC, just like menu bar Stop. The fixture sends both
+  stop outcomes through the real `CommandJSON.encode` and checks untargeted
+  and targeted stop links with the real Swift URL parser.
+- Stop exits 0 with `{"result":"stopped","stopped":true,"version":1}` or 5 with
+  `{"result":"noActiveStream","stopped":false,"version":1}`. Exit 1 means PC
+  mismatch or timeout; exit 2 means invalid arguments. Both errors use stderr
+  without JSON. The extension validates exit code and payload together.
+- `glimmer://stop` accepts an optional `pc` query. A mismatch or malformed URL
+  leaves the stream untouched. Fixtures cover accepted and malformed links;
+  matching and stream side effects belong to Glimmer, not these encoder tests.

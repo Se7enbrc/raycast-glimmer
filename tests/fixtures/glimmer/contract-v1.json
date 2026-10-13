@@ -114,7 +114,6 @@
   },
   "rejectedURLs": [
     "glimmer://pair?pc=Den",
-    "glimmer://stop?pc=Den",
     "glimmer://unknown?pc=Den",
     "glimmer://stream?pc=Den&force=1",
     "glimmer://stream?pc=Den&pc=Other",
@@ -124,7 +123,16 @@
     "glimmer://stream?pc=%20",
     "glimmer://stream?pc=Den%0A",
     "glimmer://stream?pc=Den%E2%80%8B",
-    "glimmer://stream?pc=Den%E2%80%AE"
+    "glimmer://stream?pc=Den%E2%80%AE",
+    "glimmer://stop?pc=",
+    "glimmer://stop?pc=%20",
+    "glimmer://stop?pc=Den%0A",
+    "glimmer://stop?pc=Den%E2%80%8B",
+    "glimmer://stop?pc=Den%E2%80%AE",
+    "glimmer://stop?pc=Den&app=A",
+    "glimmer://stop?app=A",
+    "glimmer://stop?pc=Den&pc=Other",
+    "glimmer://stop?force=1"
   ],
   "statusIdle": {
     "app": null,
@@ -185,6 +193,16 @@
     "resolution": null,
     "version": 1
   },
+  "stopIdle": {
+    "result": "noActiveStream",
+    "stopped": false,
+    "version": 1
+  },
+  "stopStopped": {
+    "result": "stopped",
+    "stopped": true,
+    "version": 1
+  },
   "urls": [
     {
       "action": "stream",
@@ -218,14 +236,38 @@
       "action": "quit",
       "pc": "[2001:db8::1]",
       "url": "glimmer://quit?pc=%5B2001%3Adb8%3A%3A1%5D"
+    },
+    {
+      "action": "stop",
+      "url": "glimmer://stop"
+    },
+    {
+      "action": "stop",
+      "pc": "Den PC",
+      "url": "glimmer://stop?pc=Den%20PC"
+    },
+    {
+      "action": "stop",
+      "pc": "PC-ID",
+      "url": "glimmer://stop?pc=PC-ID"
+    },
+    {
+      "action": "stop",
+      "pc": "DEN.local:47989",
+      "url": "glimmer://stop?pc=DEN.local%3A47989"
+    },
+    {
+      "action": "stop",
+      "pc": "客厅 + PC",
+      "url": "glimmer://stop?pc=%E5%AE%A2%E5%8E%85%20%2B%20PC"
     }
   ],
   "source": {
     "repository": "https://github.com/Se7enbrc/glimmer",
-    "revision": "691d7f2c596e254bec474e86205b623909070e1b",
+    "revision": "d63aac8da9599085900d7defc9567816b65c8a40",
     "sha256": {
       "Glimmer/CLI/GlimmerCLI+JSON.swift": "153fe8447f7c1429d1114849e14ba9f3065dd9268357b793a13c15e6853087f4",
-      "Glimmer/CLI/GlimmerCLI+URL.swift": "983c759c3ec02a39691731e1c6ceeec47773aefe7f9d6feb2d564cebda382966"
+      "Glimmer/CLI/GlimmerCLI+URL.swift": "f1cf6a75f23c964a8cba40f358981e0f25faed4eabc79f7cbe557a6d92a0a165"
     }
   }
 }
