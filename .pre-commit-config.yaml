@@ -1,0 +1,47 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+        args: ["--allow-multiple-documents"]
+      - id: check-added-large-files
+        args: ["--maxkb=2048"]
+      - id: check-merge-conflict
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
+      - id: check-json
+      - id: check-case-conflict
+      - id: mixed-line-ending
+      - id: fix-byte-order-marker
+
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.35.1
+    hooks:
+      - id: yamllint
+        args: [--format, parsable, "-d", "{extends: default, rules: {line-length: disable, document-start: disable}}"]
+
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.41.0
+    hooks:
+      - id: markdownlint
+        args: ["--fix", "--disable", "MD013", "MD029", "MD036", "MD041"]
+
+  - repo: local
+    hooks:
+      - id: prettier
+        name: Prettier
+        entry: node_modules/.bin/prettier --write --ignore-unknown
+        language: system
+        types_or: [yaml, markdown, json, javascript, jsx, ts, tsx]
+      - id: trufflehog
+        name: TruffleHog
+        entry: python3 scripts/check-secrets.py verified
+        language: system
+        stages: [pre-commit]
+      - id: private-keys
+        name: Private keys (offline)
+        entry: python3 scripts/check-secrets.py private-keys
+        language: system
+        stages: [pre-commit]
