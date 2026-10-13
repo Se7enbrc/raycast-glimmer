@@ -1,0 +1,32 @@
+{
+  "target": "branch",
+  "enforcement": "active",
+  "name": "Maintainer pushes, everyone else forks",
+  "bypass_actors": [
+    {
+      "actor_id": 5,
+      "actor_type": "RepositoryRole",
+      "bypass_mode": "always"
+    }
+  ],
+  "conditions": {
+    "ref_name": {
+      "include": ["~ALL"],
+      "exclude": ["refs/heads/main"]
+    }
+  },
+  "rules": [
+    {
+      "type": "creation"
+    },
+    {
+      "type": "update"
+    },
+    {
+      "type": "deletion"
+    },
+    {
+      "type": "non_fast_forward"
+    }
+  ]
+}
