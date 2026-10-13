@@ -30,7 +30,7 @@
     {
       "name": "stop-streaming",
       "title": "Stop Streaming",
-      "description": "Stop this Mac\u2019s live stream and leave the app running on the PC",
+      "description": "Check whether Glimmer can disconnect without closing the PC app",
       "mode": "no-view"
     },
     {

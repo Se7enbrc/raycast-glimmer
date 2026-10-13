@@ -89,13 +89,11 @@ export async function wakePC(pc: PC): Promise<void> {
   await run(["wake", pc.id, "--wait"], pc.name);
 }
 
-export async function stopLiveStream(): Promise<boolean> {
-  // Always read fresh status before stopping, even when the menu displays cached data.
+export async function stopLiveStream(): Promise<false> {
+  // This Glimmer contract has no disconnect command; quit would close the PC app.
   const status = await readStatus();
   if (!status.live) return false;
-  if (!status.pc) throw new Error("Glimmer didn’t identify the streaming PC. Open Glimmer and try again.");
-  await run(["stop", status.pc.id], status.pc.name, 20_000);
-  return true;
+  throw new Error("Glimmer cannot disconnect and leave the PC app running. Open Glimmer to manage the stream.");
 }
 
 export function errorMessage(error: unknown): string {

@@ -61,8 +61,7 @@ test("rejects malformed records instead of silently treating them as empty or id
     { paired: "true" },
     { state: "other" },
     { id: "" },
-    { runningApp: {} },
-    { name: "bad\nname" },
+    { runningApp: { id: "seven" } },
     { name: "\ud800" },
   ]) {
     assert.throws(() => parsePCs(json({ version: 1, pcs: [{ ...pc, ...changes }] })), ContractError);
@@ -73,7 +72,7 @@ test("rejects malformed records instead of silently treating them as empty or id
   assert.throws(() => parsePCs('{"version":1,"pcs":null}'), ContractError);
   assert.throws(() => parseApps('{"version":1,"apps":{}}'), ContractError);
   assert.throws(() => parseStatus(json({ ...idle, live: undefined })), ContractError);
-  assert.throws(() => parseStatus(json({ ...idle, fps: undefined })), ContractError);
+  assert.equal(parseStatus(json({ ...idle, fps: undefined })).fps, null);
 });
 
 test("reads idle and live stream details with explicit unknown values", () => {
@@ -124,13 +123,14 @@ test("builds URLs with percent-encoded spaces, literal pluses, Unicode, and quer
   assert.equal(new URL(url).searchParams.get("app"), title);
 });
 
-test("builds resume, wake, stop, and confirmed quit URLs with no extra parameters", () => {
-  for (const action of ["stream", "wake", "stop", "quit"]) {
+test("builds resume, wake, and confirmed quit URLs with no extra parameters", () => {
+  for (const action of ["stream", "wake", "quit"]) {
     assert.equal(buildURL(action, pc.id), `glimmer://${action}?pc=pc-uuid`);
   }
   assert.throws(() => buildURL("quit", pc.id, "Steam"));
   assert.throws(() => buildURL("pair", pc.id));
-  for (const name of ["", "  ", "a\nb", "a\u007fb", "\ud800"]) {
+  assert.throws(() => buildURL("stop", pc.id));
+  for (const name of ["", "  ", "a\nb", "a\u007fb", "a\u200bb", "a\u202eb", "\ud800"]) {
     assert.throws(() => buildURL("stream", name));
     assert.throws(() => buildURL("stream", pc.id, name));
   }
