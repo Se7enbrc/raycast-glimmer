@@ -58,20 +58,19 @@ function envelope(text: string): Record<string, unknown> {
   }
   const value = object(parsed);
   if (value.version !== 1) {
-    throw new ContractError("This Glimmer JSON version isn’t supported. Update Glimmer and this extension.");
+    throw new ContractError(
+      "Unsupported Glimmer JSON schema version; expected version 1. Update Glimmer and this extension.",
+    );
   }
   return value;
 }
 
 function hasControlCharacters(value: string): boolean {
-  return Array.from(value).some((character) => {
-    const code = character.charCodeAt(0);
-    return code <= 31 || (code >= 127 && code <= 159);
-  });
+  return /[\p{Cc}\p{Cf}]/u.test(value);
 }
 
 function string(value: unknown): string {
-  if (typeof value !== "string" || !value.trim() || hasControlCharacters(value)) return invalid();
+  if (typeof value !== "string" || !value.trim()) return invalid();
   try {
     // Reject lone surrogates before a display name is used to build a URL.
     encodeURIComponent(value);
@@ -100,7 +99,7 @@ function dimension(value: unknown): number {
 }
 
 function nullable<T>(value: unknown, parse: (value: unknown) => T): T | null {
-  return value === null ? null : parse(value);
+  return value === null || value === undefined ? null : parse(value);
 }
 
 function array<T>(value: unknown, parse: (value: unknown) => T): T[] {
@@ -179,7 +178,7 @@ export function exitCodeMessage(code: number | null, pc = "The PC"): string {
   }
 }
 
-export type URLAction = "stream" | "wake" | "stop" | "quit";
+export type URLAction = "stream" | "wake" | "quit";
 
 function queryValue(value: string): string {
   if (typeof value !== "string" || !value.trim() || hasControlCharacters(value)) {
@@ -194,7 +193,7 @@ function queryValue(value: string): string {
 }
 
 export function buildURL(action: URLAction, pc: string, app?: string): string {
-  if (!["stream", "wake", "stop", "quit"].includes(action) || (action !== "stream" && app !== undefined)) {
+  if (!["stream", "wake", "quit"].includes(action) || (action !== "stream" && app !== undefined)) {
     throw new Error("This Glimmer link action isn’t supported.");
   }
   return `glimmer://${action}?pc=${queryValue(pc)}${app === undefined ? "" : `&app=${queryValue(app)}`}`;

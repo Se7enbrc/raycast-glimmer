@@ -2,7 +2,15 @@ import { Action, ActionPanel, Icon, List } from "@raycast/api";
 import { useCachedPromise } from "@raycast/utils";
 import { buildURL } from "./lib/contract";
 import { loadLibrary } from "./lib/glimmer";
-import { ErrorView, ignoreErrorToast, NoPCs, openLink, PCControls, stateAccessory } from "./components/shared";
+import {
+  ErrorView,
+  ignoreErrorToast,
+  NoPCs,
+  openGlimmer,
+  openLink,
+  PCControls,
+  stateAccessory,
+} from "./components/shared";
 
 export default function StreamApp() {
   const { data, error, isLoading, revalidate } = useCachedPromise(loadLibrary, [], {
@@ -37,7 +45,12 @@ export default function StreamApp() {
             />
           ) : (
             apps.map((app) => {
-              const url = buildURL("stream", pc.id, app.name);
+              let url: string | undefined;
+              try {
+                url = buildURL("stream", pc.id, app.name);
+              } catch {
+                // Glimmer can list names containing controls that its URL parser rejects.
+              }
               const icon =
                 app.name.toLowerCase() === "steam"
                   ? "steam.svg"
@@ -49,6 +62,7 @@ export default function StreamApp() {
                   key={app.id}
                   id={`${pc.id}/${app.id}`}
                   title={app.name}
+                  subtitle={url ? undefined : "Open in Glimmer; this name cannot be used in a link"}
                   keywords={[pc.name]}
                   icon={icon}
                   accessories={[
@@ -59,14 +73,22 @@ export default function StreamApp() {
                   ]}
                   actions={
                     <ActionPanel>
-                      <Action
-                        title={app.running ? "Resume" : "Stream"}
-                        icon={Icon.Play}
-                        onAction={() => openLink(url)}
-                      />
+                      {url ? (
+                        <Action
+                          title={app.running ? "Resume" : "Stream"}
+                          icon={Icon.Play}
+                          onAction={() => openLink(url)}
+                        />
+                      ) : (
+                        <Action title="Open Glimmer" icon="extension-icon.png" onAction={openGlimmer} />
+                      )}
                       <PCControls pc={pc} refresh={revalidate} />
-                      <Action.CopyToClipboard title="Copy link" content={url} />
-                      <Action.CreateQuicklink quicklink={{ name: `${app.name} on ${pc.name}`, link: url }} />
+                      {url ? (
+                        <>
+                          <Action.CopyToClipboard title="Copy link" content={url} />
+                          <Action.CreateQuicklink quicklink={{ name: `${app.name} on ${pc.name}`, link: url }} />
+                        </>
+                      ) : null}
                     </ActionPanel>
                   }
                 />

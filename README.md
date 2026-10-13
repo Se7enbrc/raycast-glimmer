@@ -25,7 +25,7 @@ The extension checks `/usr/local/bin/glimmer`, `/opt/homebrew/bin/glimmer`, then
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Stream App     | Lists apps in sections for paired PCs. Shows Ready, Asleep, Offline, or Streaming, marks the running app, and uses Steam and Desktop icons.                                                             |
 | Wake PC        | Runs `glimmer wake <pc> --wait`, shows progress, and reports whether the PC answered. Glimmer waits up to 90 seconds.                                                                                   |
-| Stop Streaming | Reads fresh status, stops this Mac’s live stream, and reports the result in a HUD. Says “Nothing is streaming.” when idle. The app keeps running on the PC.                                             |
+| Stop Streaming | Reads fresh status. Reports “Nothing is streaming.” when idle; otherwise explains that Glimmer cannot disconnect while leaving the PC app running.                                                      |
 | Glimmer Status | Shows the live PC and app, resolution, frame rate, HDR or SDR, codec, and bitrate when available. Refreshes on Raycast’s 30-second interval. Includes Stop streaming, Open Glimmer, and manual refresh. |
 
 In **Stream App**, choose **Stream** or **Resume**, **Wake PC**, **Quit app on PC**, **Copy link**, or **Create Quicklink** from the action panel. Launching and quitting use `glimmer://` links opened by Raycast. Glimmer handles launch, takeover, and quit confirmations. A link to the current stream brings its window forward.
@@ -53,14 +53,14 @@ The extension calls only Glimmer’s local command and URL automation surfaces. 
 
 ## Development
 
-After reviewing the exact versions in `package.json`, the owner can run:
+Use Node 24 and the committed lockfile:
 
 ```sh
-npm install
+npm ci
 npm test
 npm run typecheck
 npm run lint
-npm run build
+npm run build -- --environment dist --non-interactive --output dist
 npm run dev
 ```
 
@@ -70,9 +70,9 @@ Pure parsing, exit-code, state, formatting, and URL tests can also run before in
 node --experimental-strip-types --test tests/*.test.mjs
 ```
 
-Tests require Node 22.6 or later with TypeScript stripping support. They do not launch Glimmer or contact the PC. The extension UI and build need Raycast and the vetted dependencies.
+Tests require Node 22.6 or later with TypeScript stripping support. They do not launch Glimmer or contact the PC. Tests and the distribution build need no running Raycast or Glimmer app. The UI requires Raycast.
 
-Dependencies are pinned to known stable releases: `@raycast/api` **1.102.6** and `@raycast/utils` **1.17.0**. Development dependencies are `@raycast/eslint-config` **2.0.4**, `@types/node` **22.13.10**, `@types/react` **19.0.10**, `eslint` **9.22.0**, `prettier` **3.5.3**, and `typescript` **5.8.2**. These are an offline baseline, not a claim that they are the latest registry releases. The owner should verify availability and current stable versions during vetting, keeping any replacements exact. No registry lookup or dependency installation was performed during authoring, and no lockfile was generated. Retain the lockfile from the vetted installation.
+Dependencies are pinned in `package.json` and `package-lock.json`. CI checks types, Raycast lint, formatting, contract tests and a headless distribution build. See [CONTRIBUTING.md](CONTRIBUTING.md) for hooks and offline checks, and [the contract fixtures](tests/fixtures/glimmer/README.md) for their Glimmer source and refresh command.
 
 ## Store preparation
 
@@ -80,8 +80,8 @@ Follow Raycast’s [Prepare an Extension for Store](https://developers.raycast.c
 
 The owner must:
 
-1. Vet and install dependencies, keep the resulting lockfile, and run the checks above.
-2. Run `npm run dev` in Raycast and verify real PCs, Steam and Desktop, resume, URL confirmations, asleep and offline PCs, an unavailable command, a failed status request, and live stream video details. Confirm the menu bar refreshes after 30 seconds and Stop streaming leaves the app running on the PC.
+1. Run the checks above with the committed lockfile and verify the Raycast author account.
+2. Run `npm run dev` in Raycast and verify real PCs, Steam and Desktop, resume, URL confirmations, asleep and offline PCs, an unavailable command, a failed status request, and live stream video details. Confirm the menu bar refreshes after 30 seconds and Stop Streaming accurately reports that disconnect is unsupported. Glimmer has no stop CLI verb or URL action; quitting or closing its stream ends the PC app. Decide whether to remove Stop Streaming before submission or add an explicit disconnect contract to Glimmer first.
 3. Add real screenshots to `metadata/` following the current store guide. See [the screenshot checklist](metadata/README.md). No screenshots are fabricated or included.
 4. Run `npm run publish` (`ray publish`), review the generated Raycast extensions store PR, and follow Raycast’s submission workflow. Publishing and store submission are left to the owner.
 

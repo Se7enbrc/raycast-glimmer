@@ -14,9 +14,8 @@ export default function GlimmerStatus() {
 
   async function stop() {
     try {
-      await showHUD(
-        (await stopLiveStream()) ? "Streaming stopped. The app is still running on the PC." : "Nothing is streaming.",
-      );
+      await stopLiveStream();
+      await showHUD("Nothing is streaming.");
       // Mutations await revalidation in menu bar commands before the command finishes.
       await mutate();
     } catch (error) {
