@@ -2,7 +2,7 @@
 
 `contract-v1.json` is produced by Glimmer's actual `CommandJSON` encoder and
 checked by its actual `GlimmerCLI.parseURL`, not a JavaScript imitation. The
-fixture records the checkout revision and SHA-256 of both Swift source files.
+fixture records the checkout revision and SHA-256 of all three Swift source files.
 `generate.swift` supplies small model stand-ins and synthetic inputs based on
 `GlimmerTests/GlimmerAutomationTests.swift`; it does not launch Glimmer, probe a
 PC or read saved user data. This checks serialization and URL parsing, not app
@@ -11,17 +11,18 @@ dispatch or the full Swift model implementation.
 On a Mac with Swift, refresh from a reviewed Glimmer checkout:
 
 ```sh
-node scripts/generate-contract-fixtures.mjs ../im
+node scripts/generate-contract-fixtures.mjs ../glimmer
 npx --no-install prettier --write tests/fixtures/glimmer/contract-v1.json
 npm test
 ```
 
-The generator compiles the encoder and parser directly from the supplied
+The generator compiles the shared URL parser as a small GlimmerEngine module,
+then compiles the real Mac wrapper and encoder directly from the supplied
 checkout in a temporary directory. Source changes should be reviewed before
 running it. CI uses the committed fixture and needs no sibling checkout.
 
-The fixtures were regenerated from `feat/2026.10.8` at
-`d63aac8da9599085900d7defc9567816b65c8a40`. That checkout defines this contract:
+The fixtures were regenerated from the stable `2026.10.8` source at
+`3e59901396c3445c04e9fe73be3d3fafb1a30ce8`. That checkout defines this contract:
 
 - URLs accept only `stream`, `stop`, `wake`, and `quit`. `pc` is optional for
   `stop` and required otherwise; `app` is optional only for `stream`. Values are decoded once, `%20` is space and `+`
@@ -41,7 +42,8 @@ The fixtures were regenerated from `feat/2026.10.8` at
   newline), while URLs cannot. Such apps remain visible, with an Open Glimmer
   action instead of an invalid stream link.
 - `stop [<pc>] [--json]` does not open Glimmer. It stops this Mac’s stream and
-  quits the game on the PC, just like menu bar Stop. The fixture sends both
+  follows Glimmer’s leave-games-running setting, just like menu bar Stop. The
+  stop payload confirms disconnection, not whether the PC app was quit. The fixture sends both
   stop outcomes through the real `CommandJSON.encode` and checks untargeted
   and targeted stop links with the real Swift URL parser.
 - Stop exits 0 with `{"result":"stopped","stopped":true,"version":1}` or 5 with

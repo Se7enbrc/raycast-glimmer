@@ -1,34 +1,11 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { createRequire } from "node:module";
 import { test } from "node:test";
 import { promisify } from "node:util";
-import { runInThisContext } from "node:vm";
-import ts from "typescript";
+import { loadSource } from "./helpers/load-source.mjs";
 import * as contract from "../src/lib/contract.ts";
 
-const require = createRequire(import.meta.url);
 const fixture = JSON.parse(readFileSync(new URL("./fixtures/glimmer/contract-v1.json", import.meta.url), "utf8"));
-const compiled = new Map();
-
-function loadSource(path, dependencies) {
-  if (!compiled.has(path)) {
-    const source = readFileSync(new URL(path, import.meta.url), "utf8");
-    const { outputText } = ts.transpileModule(source, {
-      fileName: path,
-      compilerOptions: {
-        module: ts.ModuleKind.CommonJS,
-        target: ts.ScriptTarget.ES2022,
-        jsx: ts.JsxEmit.ReactJSX,
-        esModuleInterop: false,
-      },
-    });
-    compiled.set(path, runInThisContext(`(function(require, exports) { ${outputText}\n})`, { filename: path }));
-  }
-  const exports = {};
-  compiled.get(path)((name) => dependencies[name] ?? require(name), exports);
-  return exports;
-}
 
 function setup({
   code = 0,
@@ -96,13 +73,13 @@ for (const code of [0, 5]) {
     );
     assert.equal(h.executions[0].options.shell, false);
     assert.equal(h.executions[0].options.timeout, 20_000);
-    assert.deepEqual(h.hud, [code === 0 ? "Stream stopped. Game quit on PC." : "Nothing is streaming."]);
+    assert.deepEqual(h.hud, [code === 0 ? "Stream stopped." : "Nothing is streaming."]);
     assert.deepEqual(h.toasts, []);
     assert.equal(h.events[0], "confirm");
     assert.ok(!h.events.includes("glimmer://stop"));
     assert.equal(h.alerts[0].primaryAction.style, h.api.Alert.ActionStyle.Destructive);
     assert.equal(h.alerts[0].dismissAction.style, h.api.Alert.ActionStyle.Cancel);
-    assert.match(h.alerts[0].message, /quits the game on the PC/);
+    assert.match(h.alerts[0].message, /Leave games running when you disconnect/);
     assert.ok(!h.alerts[0].rememberUserChoice);
   });
 }
@@ -244,5 +221,13 @@ test("the menu bar uses the confirmed stop flow and refreshes status afterward",
   await findStop(Status()).props.onAction();
   assert.equal(h.events[0], "confirm");
   assert.equal(h.events.at(-1), "refresh");
-  assert.deepEqual(h.hud, ["Stream stopped. Game quit on PC."]);
+  assert.deepEqual(h.hud, ["Stream stopped."]);
+});
+
+test("stream passes names as arguments without a shell or force flag", async () => {
+  const h = setup({ stdout: "" });
+  await h.glimmer.streamPC({ id: "pc-id", name: "Den PC" }, "Game + & name");
+  assert.deepEqual(h.executions[0].args, ["stream", "pc-id", "Game + & name"]);
+  assert.equal(h.executions[0].options.shell, false);
+  assert.deepEqual(h.alerts, []);
 });

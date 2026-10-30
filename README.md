@@ -4,7 +4,7 @@ Stream apps from your paired PCs with [Glimmer](https://github.com/Se7enbrc/glim
 
 ## Setup
 
-1. Install [Glimmer](https://github.com/Se7enbrc/glimmer/releases/latest) in Applications. Glimmer requires macOS 26 or later and Apple Silicon.
+1. Install [Glimmer](https://github.com/Se7enbrc/glimmer/releases/latest) in Applications. Glimmer requires macOS 15.7 or later and Apple Silicon.
 2. For a disk image installation, open Glimmer and choose **Glimmer › Install Command Line Tool…**. macOS asks for an administrator password to create `/usr/local/bin/glimmer`. The Homebrew cask creates the command link itself.
 3. Open Glimmer and pair the PC running Sunshine. Configure streaming and Wake on LAN in Glimmer.
 4. Install this extension in Raycast. Run **Stream App** or **Wake PC**. Enable **Glimmer Status** in Raycast’s extension settings to use the menu bar command.
@@ -23,22 +23,26 @@ The extension checks `/usr/local/bin/glimmer`, `/opt/homebrew/bin/glimmer`, then
 
 | Command        | What it does                                                                                                                                                                                            |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Stream App     | Lists apps in sections for paired PCs. Shows Ready, Asleep, Offline, or Streaming, marks the running app, and uses Steam and Desktop icons.                                                             |
+| Stream App     | Lists apps in sections for paired PCs. Shows PC status and puts the running app first. Hidden apps stay hidden unless running; choose All apps to reveal them.                                          |
 | Wake PC        | Runs `glimmer wake <pc> --wait`, shows progress, and reports whether the PC answered. Glimmer waits up to 90 seconds.                                                                                   |
-| Stop Streaming | Confirms, then runs `glimmer stop --json`. Stops this Mac’s stream and quits the game on the PC. Reports stopped, nothing streaming, or an error.                                                       |
+| Stop Streaming | Confirms, then runs `glimmer stop --json`. Stops this Mac’s stream, following Glimmer’s disconnect setting. Reports stopped, nothing streaming, or an error.                                            |
 | Glimmer Status | Shows the live PC and app, resolution, frame rate, HDR or SDR, codec, and bitrate when available. Refreshes on Raycast’s 30-second interval. Includes Stop streaming, Open Glimmer, and manual refresh. |
 
-In **Stream App**, choose **Stream** or **Resume**, **Wake PC**, **Quit app on PC**, **Copy link**, or **Create Quicklink** from the action panel. Launching and quitting use `glimmer://` links opened by Raycast. Glimmer handles launch, takeover, and quit confirmations. A link to the current stream brings its window forward.
+In **Stream App**, choose **Stream**, **Resume**, or **Wake and Stream** for a sleeping PC, **Wake PC**, **Quit app on PC**, **Copy link**, or **Create Quicklink** from the action panel. Stream and Resume call Glimmer’s CLI directly and dismiss Raycast once the request is accepted. There is no extra URL confirmation. An occupied session fails safely with an Open Glimmer action; the extension never forces a takeover. Quit and shareable Quicklinks still use `glimmer://` links with Glimmer’s confirmations.
 
-**Stop Streaming** asks “Stop streaming?” and warns that quitting the game on the PC may lose unsaved progress. Cancel does nothing. The menu bar’s Stop streaming action uses the same confirmation. Raycast’s [confirmation guidance](https://developers.raycast.com/api-reference/user-interface/actions) recommends an alert for actions that cannot be undone; a direct command does not make losing game progress reversible, so the alert uses `Alert.ActionStyle.Destructive` on every invocation.
+**Stop Streaming** confirms before ending the stream. Glimmer follows **Leave games running when you disconnect** in its General settings. When that setting is off, stopping also quits the game, so save first. The success message confirms the stream stopped without claiming the game was quit. The menu bar uses the same flow.
+
+**Wake and Stream** waits for the sleeping PC to answer, then requests the stream directly through the CLI. If no app list is available while the PC sleeps, the PC row launches the running app or Glimmer’s configured starting app after waking. A failed wake never launches a stream.
 
 The CLI does not open Glimmer. Only when no CLI executable is installed does Stop Streaming open `glimmer://stop` after confirmation. The fallback toast says the CLI is missing and the URL result cannot be verified; it does not claim the stream stopped. An older CLI, timeout, permission failure, or invalid response reports an error without trying the URL. Opening the fallback URL may launch Glimmer.
 
 Quicklinks identify the PC by its saved ID and the app by name. Renaming an app can require recreating its quicklink. Spaces use `%20` and literal plus signs use `%2B`, matching Glimmer’s URL rules.
 
-PC and app lists use Raycast’s `useCachedPromise`. Once the PC list finishes, app lists load in parallel. Each PC’s failure stays in its own section, where Wake PC and refresh remain available. Cached lists appear while refreshing; choose **Refresh apps** after changing pairing or the app library. Hidden apps are included and labeled. A running app can also be active on another device; only **Glimmer Status** describes this Mac’s live stream.
+PC and app lists use Raycast’s `useCachedPromise`. Once the PC list finishes, app lists load in parallel. Each PC’s failure stays in its own section, where Wake PC and refresh remain available. Cached lists appear while refreshing; choose **Refresh apps** after changing pairing or the app library. The running app stays visible even when marked hidden. A running app can also be active on another device; only **Glimmer Status** describes this Mac’s live stream.
 
 ## Troubleshooting
+
+Allow Raycast local network access when macOS asks; its Glimmer commands need to reach your PCs. If access was initially denied, enable Raycast in System Settings › Privacy & Security › Local Network, then restart Raycast and refresh the app list.
 
 If the command is missing, the list commands show a setup view with the download link and a copyable Homebrew command. **Stop Streaming** uses the URL fallback described above; the menu bar offers **Set up Glimmer…**.
 
@@ -86,7 +90,7 @@ Follow Raycast’s [Prepare an Extension for Store](https://developers.raycast.c
 The owner must:
 
 1. Run the checks above with the committed lockfile and verify the Raycast author account.
-2. Run `npm run dev` in Raycast and verify real PCs, Steam and Desktop, resume, URL confirmations, asleep and offline PCs, an unavailable command, a failed status request, and live stream video details. Confirm the menu bar refreshes after 30 seconds. Verify Stop Streaming cancellation, stopped and idle results, CLI errors, and the missing-CLI URL fallback. Confirm stopping quits the game on the PC and that both entry points warn before doing so.
+2. Run `npm run dev` in Raycast and verify real PCs, Steam and Desktop, resume, quit/Quicklink confirmations, asleep and offline PCs, an unavailable command, a failed status request, and live stream video details. Confirm the menu bar refreshes after 30 seconds. Verify Stop Streaming cancellation, stopped and idle results, CLI errors, and the missing-CLI URL fallback. Check stop with both disconnect-setting values; the warning and result must remain accurate. Check Wake and Stream once, including a failed wake that must not launch anything.
 3. Add real screenshots to `metadata/` following the current store guide. See [the screenshot checklist](metadata/README.md). No screenshots are fabricated or included.
 4. Run `npm run publish` (`ray publish`), review the generated Raycast extensions store PR, and follow Raycast’s submission workflow. Publishing and store submission are left to the owner.
 
