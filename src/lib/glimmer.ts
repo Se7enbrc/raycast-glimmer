@@ -101,6 +101,11 @@ export async function wakePC(pc: PC): Promise<void> {
   await run(["wake", pc.id, "--wait"], pc.name);
 }
 
+export async function streamPC(pc: PC, app?: string): Promise<void> {
+  // No --force: an occupied session must be resolved in Glimmer.
+  await run(["stream", pc.id, ...(app === undefined ? [] : [app])], pc.name);
+}
+
 export async function stopLiveStream(): Promise<StopResult> {
   // The CLI waits up to 15 seconds for a reply; allow startup and teardown time.
   const { stdout, exitCode } = await run(["stop", "--json"], undefined, 20_000, [5]);

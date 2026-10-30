@@ -2,7 +2,7 @@
 
 ## [Initial release] - {PR_MERGE_DATE}
 
-- Browse apps on paired PCs and stream or resume through Glimmer.
+- Browse apps on paired PCs and stream or resume directly through Glimmer’s CLI.
 - Wake a PC and wait for it to answer.
 - Stop this Mac’s stream after confirmation, respecting Glimmer’s leave-games-running setting.
 - Wake a sleeping PC and request a stream after it answers.

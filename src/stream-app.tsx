@@ -8,10 +8,9 @@ import {
   ignoreErrorToast,
   NoPCs,
   openGlimmer,
-  openLink,
   PCControls,
   stateAccessory,
-  wakeWithToast,
+  streamWithToast,
 } from "./components/shared";
 
 export default function StreamApp() {
@@ -43,17 +42,13 @@ export default function StreamApp() {
                 title={pc.name}
                 subtitle={pcError ?? (allApps.length ? "Choose All apps to show hidden apps" : "No apps available")}
                 icon={Icon.Desktop}
-                accessories={[stateAccessory(pc)]}
+                accessories={[stateAccessory(pc, !!pcError)]}
                 actions={
                   <ActionPanel>
                     {pc.state === "asleep" ? (
-                      <Action
-                        title="Wake and Stream"
-                        icon={Icon.Play}
-                        onAction={() => wakeWithToast(pc, revalidate, buildURL("stream", pc.id))}
-                      />
+                      <Action title="Wake and Stream" icon={Icon.Play} onAction={() => streamWithToast(pc)} />
                     ) : pc.runningApp ? (
-                      <Action title="Resume" icon={Icon.Play} onAction={() => openLink(buildURL("stream", pc.id))} />
+                      <Action title="Resume" icon={Icon.Play} onAction={() => streamWithToast(pc)} />
                     ) : null}
                     <PCControls pc={pc} refresh={revalidate} />
                     <Action.CopyToClipboard title="Copy link" content={buildURL("stream", pc.id)} />
@@ -97,9 +92,7 @@ export default function StreamApp() {
                           <Action
                             title={pc.state === "asleep" ? "Wake and Stream" : app.running ? "Resume" : "Stream"}
                             icon={Icon.Play}
-                            onAction={() =>
-                              pc.state === "asleep" ? wakeWithToast(pc, revalidate, url) : openLink(url)
-                            }
+                            onAction={() => streamWithToast(pc, app.name)}
                           />
                         ) : (
                           <Action title="Open Glimmer" icon="extension-icon.png" onAction={openGlimmer} />

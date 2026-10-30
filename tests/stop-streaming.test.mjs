@@ -223,3 +223,11 @@ test("the menu bar uses the confirmed stop flow and refreshes status afterward",
   assert.equal(h.events.at(-1), "refresh");
   assert.deepEqual(h.hud, ["Stream stopped."]);
 });
+
+test("stream passes names as arguments without a shell or force flag", async () => {
+  const h = setup({ stdout: "" });
+  await h.glimmer.streamPC({ id: "pc-id", name: "Den PC" }, "Game + & name");
+  assert.deepEqual(h.executions[0].args, ["stream", "pc-id", "Game + & name"]);
+  assert.equal(h.executions[0].options.shell, false);
+  assert.deepEqual(h.alerts, []);
+});

@@ -24,17 +24,14 @@ test("the launcher hides hidden apps except the running app, without changing so
   );
 });
 
-function setup({ wake = async () => {}, open = async () => {} } = {}) {
+function setup({ wake = async () => {}, stream = async () => {} } = {}) {
   const events = [];
   const toast = {};
-  const { wakeWithToast } = loadSource("../src/components/shared.tsx", {
+  const { wakeWithToast, streamWithToast } = loadSource("../src/components/shared.tsx", {
     "@raycast/api": {
       Toast: { Style: { Animated: "working", Success: "success", Failure: "failure" } },
       showToast: async (options) => Object.assign(toast, options),
-      open: async (url) => {
-        events.push(url);
-        await open();
-      },
+      closeMainWindow: async () => events.push("close"),
     },
     "../lib/contract": {},
     "../lib/glimmer": {
@@ -42,11 +39,15 @@ function setup({ wake = async () => {}, open = async () => {} } = {}) {
         events.push(`wake:${pc.id}`);
         await wake();
       },
+      streamPC: async (pc, app) => {
+        events.push(["stream", pc.id, app]);
+        await stream();
+      },
       errorMessage: (error) => error.message,
     },
   });
-  const pc = { id: "pc-id", name: "Den PC" };
-  return { wakeWithToast, pc, toast, events, refresh: async () => events.push("refresh") };
+  const pc = { id: "pc-id", name: "Den PC", state: "asleep" };
+  return { wakeWithToast, streamWithToast, pc, toast, events, refresh: async () => events.push("refresh") };
 }
 
 test("wake and stream waits for the PC and suppresses duplicate wake requests", async () => {
@@ -55,14 +56,13 @@ test("wake and stream waits for the PC and suppresses duplicate wake requests", 
     finishWake = resolve;
   });
   const h = setup({ wake: () => waiting });
-  const url = "glimmer://stream?pc=pc-id&app=Steam";
-  const pending = h.wakeWithToast(h.pc, h.refresh, url);
+  const pending = h.streamWithToast(h.pc, "Steam");
   await Promise.resolve();
-  await h.wakeWithToast(h.pc, h.refresh, url);
+  await h.streamWithToast(h.pc, "Steam");
   assert.deepEqual(h.events, ["wake:pc-id"]);
   finishWake();
   await pending;
-  assert.deepEqual(h.events, ["wake:pc-id", url, "refresh"]);
+  assert.deepEqual(h.events, ["wake:pc-id", ["stream", "pc-id", "Steam"], "close"]);
   assert.equal(h.toast.title, "Stream requested");
   assert.equal(h.toast.style, "success");
 });
@@ -73,7 +73,7 @@ test("a failed wake never requests a stream and permits retry", async () => {
       throw new Error("PC did not answer");
     },
   });
-  for (let attempt = 0; attempt < 2; attempt++) await h.wakeWithToast(h.pc, h.refresh, "glimmer://stream?pc=pc-id");
+  for (let attempt = 0; attempt < 2; attempt++) await h.streamWithToast(h.pc);
   assert.deepEqual(h.events, ["wake:pc-id", "wake:pc-id"]);
   assert.equal(h.toast.style, "failure");
   assert.equal(h.toast.title, "Couldn’t wake Den PC");
@@ -81,15 +81,15 @@ test("a failed wake never requests a stream and permits retry", async () => {
 
 test("a failed launch reports that wake succeeded, without claiming playback", async () => {
   const h = setup({
-    open: async () => {
-      throw new Error("Private URL details");
+    stream: async () => {
+      throw new Error("Glimmer couldn’t complete the request. Open Glimmer and try again.");
     },
   });
-  await h.wakeWithToast(h.pc, h.refresh, "glimmer://stream?pc=pc-id");
+  await h.streamWithToast(h.pc);
   assert.equal(h.toast.style, "failure");
-  assert.equal(h.toast.title, "PC awake, but couldn’t open Glimmer");
+  assert.equal(h.toast.title, "Couldn’t start streaming");
   assert.doesNotMatch(h.toast.message, /Private/);
-  assert.equal(h.events.at(-1), "refresh");
+  assert.ok(!h.events.includes("close"));
 });
 
 test("wake-only never opens a stream", async () => {
@@ -97,4 +97,10 @@ test("wake-only never opens a stream", async () => {
   await h.wakeWithToast(h.pc, h.refresh);
   assert.deepEqual(h.events, ["wake:pc-id", "refresh"]);
   assert.equal(h.toast.title, "Den PC is awake");
+});
+
+test("a ready PC launches directly without wake or an external URL prompt", async () => {
+  const h = setup();
+  await h.streamWithToast({ ...h.pc, state: "ready" }, "Steam Big Picture");
+  assert.deepEqual(h.events, [["stream", "pc-id", "Steam Big Picture"], "close"]);
 });
