@@ -37,7 +37,7 @@ const wakingPCs = new Set<string>();
 
 type Refresh = () => void | Promise<unknown>;
 
-export async function wakeWithToast(pc: PC, refresh: Refresh) {
+export async function wakeWithToast(pc: PC, refresh: Refresh, streamURL?: string) {
   if (wakingPCs.has(pc.id)) return;
   wakingPCs.add(pc.id);
   const toast = await showToast({
@@ -57,6 +57,17 @@ export async function wakeWithToast(pc: PC, refresh: Refresh) {
     return;
   } finally {
     wakingPCs.delete(pc.id);
+  }
+  if (streamURL) {
+    try {
+      await open(streamURL);
+      toast.title = "Stream requested";
+      toast.message = "Continue in Glimmer to start playing.";
+    } catch {
+      toast.style = Toast.Style.Failure;
+      toast.title = "PC awake, but couldn’t open Glimmer";
+      toast.message = "Open Glimmer to start the stream.";
+    }
   }
   // A subsequent listing failure must not turn a successful wake into a failure.
   try {

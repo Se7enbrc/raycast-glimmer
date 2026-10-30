@@ -7,8 +7,9 @@ export default async function StopStreaming() {
     if (
       !(await confirmAlert({
         title: "Stop streaming?",
-        message: "This also quits the game on the PC. Unsaved progress may be lost.",
-        primaryAction: { title: "Stop and quit game", style: Alert.ActionStyle.Destructive },
+        message:
+          "Glimmer follows your ‘Leave games running when you disconnect’ setting. If it’s off, the game will quit and unsaved progress may be lost.",
+        primaryAction: { title: "Stop streaming", style: Alert.ActionStyle.Destructive },
         dismissAction: { title: "Cancel", style: Alert.ActionStyle.Cancel },
       }))
     ) {
@@ -16,7 +17,7 @@ export default async function StopStreaming() {
     }
     try {
       const result = await stopLiveStream();
-      await showHUD(result.stopped ? "Stream stopped. Game quit on PC." : "Nothing is streaming.");
+      await showHUD(result.stopped ? "Stream stopped." : "Nothing is streaming.");
     } catch (error) {
       if (!(error instanceof MissingCLIError)) throw error;
       try {

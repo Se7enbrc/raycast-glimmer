@@ -22,6 +22,12 @@ export interface App {
   running: boolean;
 }
 
+export function launcherApps(apps: App[], showHidden: boolean): App[] {
+  return apps
+    .filter((app) => showHidden || !app.hidden || app.running)
+    .sort((a, b) => Number(b.running) - Number(a.running));
+}
+
 export interface StreamStatus {
   live: boolean;
   pc: { id: string; name: string } | null;

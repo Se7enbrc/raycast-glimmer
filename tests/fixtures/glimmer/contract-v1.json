@@ -264,10 +264,11 @@
   ],
   "source": {
     "repository": "https://github.com/Se7enbrc/glimmer",
-    "revision": "d63aac8da9599085900d7defc9567816b65c8a40",
+    "revision": "3e59901396c3445c04e9fe73be3d3fafb1a30ce8",
     "sha256": {
-      "Glimmer/CLI/GlimmerCLI+JSON.swift": "153fe8447f7c1429d1114849e14ba9f3065dd9268357b793a13c15e6853087f4",
-      "Glimmer/CLI/GlimmerCLI+URL.swift": "f1cf6a75f23c964a8cba40f358981e0f25faed4eabc79f7cbe557a6d92a0a165"
+      "Glimmer/CLI/GlimmerCLI+JSON.swift": "cf96892fc9e0aaad23ad048fd17da35ac33f600ece1f8a90620c2eea254181a5",
+      "Glimmer/CLI/GlimmerCLI+URL.swift": "40087ed9039166edd16b71440cef721443898b8db397a68315e33e162708fc81",
+      "GlimmerEngine/Models/GlimmerCommandURL.swift": "7c64a7e7848897ec1fb20cc6e19033f397e90f4d0500e65b15985cd2979df1bb"
     }
   }
 }
