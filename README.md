@@ -62,7 +62,8 @@ The extension calls only Glimmer’s local command and URL automation surfaces. 
 
 ## Development
 
-Use Node 24 and the committed lockfile:
+Source, tests, and contribution instructions are maintained in
+[Se7enbrc/raycast-glimmer](https://github.com/Se7enbrc/raycast-glimmer).
 
 ```sh
 npm ci
@@ -70,29 +71,10 @@ npm test
 npm run typecheck
 npm run lint
 npm run build -- --environment dist --non-interactive --output dist
-npm run dev
 ```
 
-Pure parsing, exit-code, state, formatting, and URL tests can also run before installing dependencies:
-
-```sh
-node --experimental-strip-types --test tests/contract.test.mjs tests/glimmer-fixtures.test.mjs
-```
-
-Tests require Node 22.6 or later with TypeScript stripping support. The full suite also uses the installed TypeScript compiler to load command modules with mocked Raycast and process boundaries; it covers confirmation, all stop exit codes, invalid JSON, and URL fallback. They do not launch Glimmer or contact the PC. Tests and the distribution build need no running Raycast or Glimmer app. The UI requires Raycast.
-
-Dependencies are pinned in `package.json` and `package-lock.json`. CI checks types, Raycast lint, formatting, contract tests and a headless distribution build. See [CONTRIBUTING.md](CONTRIBUTING.md) for hooks and offline checks, and [the contract fixtures](tests/fixtures/glimmer/README.md) for their Glimmer source and refresh command.
-
-## Store preparation
-
-Follow Raycast’s [Prepare an Extension for Store](https://developers.raycast.com/basics/prepare-an-extension-for-store) guide. The manifest uses the noun title **Glimmer**, author **ugfuglio**, an MIT license, categories, descriptions, and a 512 × 512 PNG icon in `assets/extension-icon.png`. Command titles follow the requested names; **Glimmer Status** is the requested menu bar title. In-command copy uses sentence case.
-
-The owner must:
-
-1. Run the checks above with the committed lockfile and verify the Raycast author account.
-2. Run `npm run dev` in Raycast and verify real PCs, Steam and Desktop, resume, quit/Quicklink confirmations, asleep and offline PCs, an unavailable command, a failed status request, and live stream video details. Confirm the menu bar refreshes after 30 seconds. Verify Stop Streaming cancellation, stopped and idle results, CLI errors, and the missing-CLI URL fallback. Check stop with both disconnect-setting values; the warning and result must remain accurate. Check Wake and Stream once, including a failed wake that must not launch anything.
-3. Add real screenshots to `metadata/` following the current store guide. See [the screenshot checklist](metadata/README.md). No screenshots are fabricated or included.
-4. Run `npm run publish` (`ray publish`), review the generated Raycast extensions store PR, and follow Raycast’s submission workflow. Publishing and store submission are left to the owner.
+The tests use local fixtures and mocked Raycast/process boundaries. They do not
+launch Glimmer, contact a PC, or change pairing data.
 
 ## License
 
