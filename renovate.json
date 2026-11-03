@@ -19,6 +19,12 @@
       "groupName": "dependencies",
       "groupSlug": "all",
       "commitMessagePrefix": "build(deps):"
+    },
+    {
+      "description": "Match @raycast/eslint-config's TypeScript peer range; review when that config supports newer compilers.",
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["typescript"],
+      "allowedVersions": ">=4.8.4 <6.1.0"
     }
   ]
 }
