@@ -1,6 +1,6 @@
 # Contributing
 
-Use Node 24 and the committed npm lockfile. Keep dependencies exact and add none
+Use Node 26 and the committed npm lockfile. Keep dependencies exact and add none
 when the platform already provides what is needed. Follow the
 [Raycast Store requirements](https://developers.raycast.com/basics/prepare-an-extension-for-store)
 and `@raycast/api` conventions.
