@@ -26,6 +26,7 @@ repos:
     rev: v0.50.0
     hooks:
       - id: markdownlint
+        language_version: 26.13.0
         args: ["--fix", "--disable", "MD013", "MD029", "MD036", "MD041"]
 
   - repo: local

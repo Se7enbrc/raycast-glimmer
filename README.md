@@ -42,6 +42,8 @@ PC and app lists use Raycast’s `useCachedPromise`. Once the PC list finishes, 
 
 ## Troubleshooting
 
+App names beginning with a hyphen cannot be passed safely to Glimmer’s command. Use the Open Glimmer action to stream these apps.
+
 Allow Raycast local network access when macOS asks; its Glimmer commands need to reach your PCs. If access was initially denied, enable Raycast in System Settings › Privacy & Security › Local Network, then restart Raycast and refresh the app list.
 
 If the command is missing, the list commands show a setup view with the download link and a copyable Homebrew command. **Stop Streaming** uses the URL fallback described above; the menu bar offers **Set up Glimmer…**.
