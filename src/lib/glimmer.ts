@@ -75,25 +75,8 @@ export async function readStatus() {
   return parseStatus((await run(["status", "--json"], undefined, 15_000)).stdout);
 }
 
-export interface PCLibrary {
-  pc: PC;
-  apps: App[];
-  error?: string;
-}
-
-export async function loadLibrary(): Promise<PCLibrary[]> {
-  const pcs = await listPCs();
-  // The PC list must finish first; each independent app list then loads in parallel.
-  return Promise.all(
-    pcs.map(async (pc): Promise<PCLibrary> => {
-      try {
-        return { pc, apps: parseApps((await run(["list", pc.id, "--json"], pc.name)).stdout) };
-      } catch (error) {
-        if (error instanceof MissingCLIError) throw error;
-        return { pc, apps: [], error: errorMessage(error) };
-      }
-    }),
-  );
+export async function listApps(pcID: string, pcName: string): Promise<App[]> {
+  return parseApps((await run(["list", pcID, "--json"], pcName)).stdout);
 }
 
 export async function wakePC(pc: PC): Promise<void> {
@@ -102,6 +85,10 @@ export async function wakePC(pc: PC): Promise<void> {
 }
 
 export async function streamPC(pc: PC, app?: string): Promise<void> {
+  // Argument arrays avoid a shell, but option-shaped names still change CLI parsing.
+  if (app?.trimStart().startsWith("-")) {
+    throw new Error("This app’s name looks like a command option. Open Glimmer to stream it.");
+  }
   // No --force: an occupied session must be resolved in Glimmer.
   await run(["stream", pc.id, ...(app === undefined ? [] : [app])], pc.name);
 }

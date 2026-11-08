@@ -213,15 +213,69 @@ test("the menu bar uses the confirmed stop flow and refreshes status afterward",
     "./stop-streaming": { default: h.command },
     "./components/shared": {},
   });
-  function findStop(node) {
-    if (!node) return undefined;
-    if (node?.props?.title === "Stop streaming") return node;
-    return [node?.props?.children].flat().map(findStop).find(Boolean);
-  }
-  await findStop(Status()).props.onAction();
+  await findItem(Status(), "Stop streaming").props.onAction();
   assert.equal(h.events[0], "confirm");
   assert.equal(h.events.at(-1), "refresh");
   assert.deepEqual(h.hud, ["Stream stopped."]);
+});
+
+function findItem(node, title) {
+  if (!node) return undefined;
+  if (node?.props?.title === title) return node;
+  return [node?.props?.children]
+    .flat()
+    .map((child) => findItem(child, title))
+    .find(Boolean);
+}
+
+for (const fails of [false, true]) {
+  test(`menu bar setup ${fails ? "handles launch rejection" : "opens Stream App"}`, async () => {
+    const h = setup();
+    const launches = [];
+    const { default: Status } = loadSource("../src/glimmer-status.tsx", {
+      "@raycast/api": {
+        ...h.api,
+        Icon: {},
+        LaunchType: { UserInitiated: "user" },
+        launchCommand: async (options) => {
+          launches.push(options);
+          if (fails) throw new Error("Private launch error");
+        },
+        MenuBarExtra: Object.assign(() => null, { Section: "section", Item: "item" }),
+      },
+      "@raycast/utils": { useCachedPromise: () => ({ error: new h.glimmer.MissingCLIError() }) },
+      "./lib/contract": contract,
+      "./lib/glimmer": h.glimmer,
+      "./stop-streaming": { default: h.command },
+      "./components/shared": {},
+    });
+    await findItem(Status(), "Set up Glimmer…").props.onAction();
+    assert.deepEqual(launches, [{ name: "stream-app", type: "user" }]);
+    assert.deepEqual(h.hud, fails ? ["Couldn’t open Glimmer setup. Try Stream App in Raycast."] : []);
+  });
+}
+
+for (const name of ["--help", "--force", "--json", "-h", "-", "--", " \t--help"]) {
+  test(`stream rejects option-shaped app name ${JSON.stringify(name)} before executing the CLI`, async () => {
+    const h = setup({ stdout: "" });
+    await assert.rejects(h.glimmer.streamPC({ id: "pc-id", name: "Den PC" }, name), /Open Glimmer to stream it/);
+    assert.deepEqual(h.events, []);
+    assert.deepEqual(h.executions, []);
+  });
+}
+
+test("stream can resume without an app and preserves ordinary names containing hyphens", async () => {
+  const h = setup({ stdout: "" });
+  const pc = { id: "pc-id", name: "Den PC" };
+  await h.glimmer.streamPC(pc);
+  await h.glimmer.streamPC(pc, "Game --help - Deluxe");
+  assert.deepEqual(
+    h.executions.map(({ args }) => args),
+    [
+      ["stream", "pc-id"],
+      ["stream", "pc-id", "Game --help - Deluxe"],
+    ],
+  );
 });
 
 test("stream passes names as arguments without a shell or force flag", async () => {

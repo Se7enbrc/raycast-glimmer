@@ -89,6 +89,7 @@ test("a failed launch reports that wake succeeded, without claiming playback", a
   assert.equal(h.toast.style, "failure");
   assert.equal(h.toast.title, "Couldn’t start streaming");
   assert.doesNotMatch(h.toast.message, /Private/);
+  assert.equal(h.toast.primaryAction.title, "Open Glimmer");
   assert.ok(!h.events.includes("close"));
 });
 
